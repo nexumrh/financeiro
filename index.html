@@ -8047,7 +8047,7 @@ async function saDesenhar(tk){
   box.innerHTML=`<div class="card" style="margin:0"><div class="row" style="justify-content:space-between;align-items:center;gap:8px">
       <b>${esc(cab?.clienteNome||'Cliente')} · contrato ${esc(cab?.vendaNumero||'—')}</b>
       <button class="btn sm" data-act="go" data-tab="aparelhos">Ver aparelhos</button></div>
-    <div class="sa-conv mt" id="saMsgs">${msgs.length?msgs.map(m=>`<div class="sa-b ${m.de==='cliente'?'sa-cli':'sa-sup'}">${esc(m.texto)}<span class="h">${fmtDT(m.em)}${m.de==='suporte'&&m.porNome?' · '+esc(m.porNome):''}</span></div>`).join(''):'<p class="muted">Sem mensagens ainda.</p>'}</div>
+    <div class="sa-conv mt" id="saMsgs">${msgs.length?msgs.map(m=>`<div class="sa-b ${m.de==='cliente'?'sa-cli':'sa-sup'}">${saTexto(m)}<span class="h">${fmtDT(m.em)}${m.de==='suporte'&&m.porNome?' · '+esc(m.porNome):''}</span></div>`).join(''):'<p class="muted">Sem mensagens ainda.</p>'}</div>
     <div class="row mt" style="gap:8px"><input id="saTxt" placeholder="Responder como Suporte NexumCell" style="flex:1" maxlength="2000"><button class="btn pri" data-act="saEnviar" data-id="${esc(tk)}">Enviar</button></div></div>`;
   const m=$('#saMsgs'); if(m) m.scrollTop=m.scrollHeight;
   const t=$('#saTxt'); if(t) t.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); ACT.saEnviar({id:tk}); } };
@@ -8063,6 +8063,16 @@ Object.assign(ACT,{
 });
 
 window.__nx={S,DB,avaliar,payloadProvisionamento,telaRestrito,scriptInstPc:(...a)=>scriptInstPc(...a)};
+
+/* Resumo que a assistente do app manda ao transferir o cliente: mostra organizado para o atendente */
+function saTexto(m){
+  const t=String(m.texto||'');
+  if(!t.startsWith('[Cliente transferido')) return esc(t);
+  const ped=(t.match(/Pedido:\s*([^\n]*)/)||[])[1]||'';
+  const conv=(t.split(/Conversa com a assistente:\s*/)[1]||'').split('\n').map(x=>x.trim()).filter(Boolean);
+  return `<div style="font-size:12px;font-weight:700;letter-spacing:.3px;color:#1D4ED8;margin-bottom:4px">TRANSFERIDO PELA ASSISTENTE VIRTUAL</div>${ped?`<div><b>Pedido do cliente:</b> ${esc(ped)}</div>`:''}${conv.length?`<details style="margin-top:6px"><summary style="cursor:pointer;color:#475569">Ver a conversa com a assistente (${conv.length})</summary>${conv.map(l=>`<div style="margin-top:4px;color:#334155">${esc(l)}</div>`).join('')}</details>`:''}`;
+}
+
 </script>
 </body>
 </html>
