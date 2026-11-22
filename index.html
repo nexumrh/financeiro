@@ -9483,6 +9483,255 @@ Object.assign(ACT,{
   empLimBloq:async d=>{ await DB.set('limitesCliente',d.id,{bloqueado:!!d.b,atualizadoEm:Date.now(),por:S.me.nome}); toast(d.b?'Limite bloqueado':'Limite desbloqueado','ok'); render(); },
 });
 
+
+/* ===================== ATENDIMENTO NO PORTAL COM O VISUAL DO CRM (nov/2026)
+   Liberações, App do cliente, Pedidos, Chamados e Chat dos portais voltam ao menu do suporte e do financeiro,
+   cada um em caixa de entrada igual à do CRM (lista, conversa e ficha do cliente), ligados ao CRM:
+   mesmo responsável (crmAtrib), mesmas notas internas (crmNotas) e mesmas respostas rápidas (config/crm). ===================== */
+document.head.insertAdjacentHTML('beforeend',`<style id="cxCss">
+.cx{--cx-pri:#1D5BFF;--cx-pri-s:#EAF0FF;--cx-ok:#0E8A5F;--cx-ok-s:#E6F6EE;--cx-bad:#C23B3B;--cx-bad-s:#FDECEC;--cx-warn:#B7791F;--cx-warn-s:#FFF5E0;--cx-line:#E3E7F0;--cx-mut:#5B6478;
+  display:grid;grid-template-columns:minmax(300px,360px) minmax(0,1fr) 300px;height:calc(100vh - 128px);min-height:560px;background:#fff;border:1px solid var(--cx-line);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(10,23,51,.07)}
+.cx.sem-pf{grid-template-columns:minmax(300px,360px) minmax(0,1fr) 0}.cx.sem-pf .cx-pf{display:none}
+.cx-lst{display:flex;flex-direction:column;border-right:1px solid var(--cx-line);min-width:0;background:#FBFCFE}
+.cx-h{padding:14px 14px 10px;border-bottom:1px solid var(--cx-line);background:#fff}.cx-h h3{margin:0 0 10px;font-size:17px;display:flex;align-items:center;gap:8px}.cx-h h3 small{margin-left:auto;font-weight:600;color:var(--cx-mut);font-size:12px}
+.cx-busca{position:relative}.cx-busca svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#8A93A8}.cx-busca input{padding-left:34px!important;height:38px;border-radius:11px}
+.cx-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;background:#EEF1F7;border-radius:11px;padding:3px;margin-top:10px}.cx-tabs button{border:0;background:none;border-radius:8px;padding:6px 4px;font-weight:700;font-size:12.5px;color:#4B556B;cursor:pointer}.cx-tabs button.on{background:#fff;color:#0A1733;box-shadow:0 1px 3px rgba(10,23,51,.12)}
+.cx-mt{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}.cx-mt div{border:1px solid var(--cx-line);border-radius:10px;padding:6px 8px;background:#fff}.cx-mt b{display:block;font-size:16px}.cx-mt span{font-size:10.5px;color:var(--cx-mut);line-height:1.2;display:block}
+.cx-b{flex:1;overflow:auto}
+.cx-it{display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid #EEF1F7;cursor:pointer;position:relative}.cx-it:hover{background:#F3F6FC}.cx-it.on{background:var(--cx-pri-s)}.cx-it.on::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cx-pri)}
+.cx-it.urg{background:#FFF8F7}.cx-av{width:40px;height:40px;border-radius:50%;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px}
+.cx-tx{flex:1;min-width:0}.cx-l1{display:flex;gap:6px;align-items:baseline}.cx-l1 b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}.cx-l1 time{font-size:11.5px;color:var(--cx-mut)}.cx-it.nl .cx-l1 time{color:var(--cx-ok);font-weight:700}
+.cx-l2{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--cx-mut)}.cx-l2 span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cx-l2 i{background:var(--cx-ok);color:#fff;font-style:normal;font-size:11px;font-weight:700;border-radius:99px;min-width:19px;height:19px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.cx-l3{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.cx-pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;border-radius:99px;padding:2px 8px;background:#EEF1F7;color:#4B556B;white-space:nowrap}
+.cx-ch{display:flex;flex-direction:column;min-width:0}
+.cx-chh{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--cx-line);background:#fff;min-height:62px}.cx-chh .nm{flex:1;min-width:90px}.cx-chh .btn{flex:none;white-space:nowrap}.cx-chh .btn svg{width:15px;height:15px;vertical-align:-3px}.cx-chh .nm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cx-chh .nm span{font-size:12.5px;color:var(--cx-mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.cx-chh select{width:auto;max-width:150px;flex:none;height:34px;font-size:13px}.cx-ib{width:34px;height:34px;border-radius:10px;border:1px solid var(--cx-line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#4B556B;flex:none}.cx-ib svg{width:17px;height:17px}
+.cx-msgs{flex:1;overflow:auto;padding:16px 18px;background:#F4F6FA radial-gradient(#DCE2EE 1px,transparent 1px) 0 0/18px 18px;display:flex;flex-direction:column;gap:8px}
+.cx-m{max-width:72%;background:#fff;border:1px solid var(--cx-line);border-radius:14px 14px 14px 4px;padding:8px 12px 6px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word;align-self:flex-start;box-shadow:0 1px 2px rgba(10,23,51,.05)}
+.cx-m small{display:block;font-size:11px;font-weight:700;color:var(--cx-pri);margin-bottom:2px}.cx-m .h{font-size:10.5px;color:#8A93A8;text-align:right;margin-top:2px}
+.cx-m.eu{align-self:flex-end;background:#E5EEFF;border-color:#CFDDFF;border-radius:14px 14px 4px 14px}.cx-m.bot{align-self:flex-end;background:#F1F3F8;border-style:dashed}.cx-m.nota{align-self:center;background:#FFF7DB;border-color:#F3DC8B;max-width:86%}.cx-m.nota small{color:#8A6A00}
+.cx-m.sis{align-self:center;background:transparent;border:0;box-shadow:none;font-size:12px;color:var(--cx-mut);padding:2px}
+.cx-dia{align-self:center;font-size:11.5px;font-weight:700;color:#5B6478;background:#fff;border:1px solid var(--cx-line);border-radius:99px;padding:2px 10px;margin:4px 0}
+.cx-cp{border-top:1px solid var(--cx-line);background:#fff;padding:10px 12px;position:relative}.cx-cpt{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.cx-f{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--cx-line);background:#fff;border-radius:99px;padding:5px 11px;font-size:12.5px;font-weight:600;color:#334;cursor:pointer}.cx-f svg{width:14px;height:14px}.cx-f select{border:0;background:none;font-weight:700;height:auto;padding:0;width:auto}
+.cx-cpr{display:flex;gap:8px;align-items:flex-end}.cx-cpr textarea{flex:1;resize:none;min-height:44px;max-height:170px;border-radius:12px}
+.cx-sug{position:absolute;left:12px;right:12px;bottom:100%;margin-bottom:6px;background:#fff;border:1px solid var(--cx-line);border-radius:14px;box-shadow:0 14px 40px rgba(10,23,51,.16);max-height:300px;overflow:auto;z-index:5}
+.cx-sug .hd{display:flex;justify-content:space-between;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cx-mut);padding:8px 12px 4px}.cx-sug .si{padding:7px 12px;cursor:pointer}.cx-sug .si.on,.cx-sug .si:hover{background:var(--cx-pri-s)}.cx-sug .si b{color:var(--cx-pri);font-size:13px}.cx-sug .si span{font-size:12px;color:var(--cx-mut);margin-left:6px}.cx-sug .si p{margin:1px 0 0;font-size:12.5px;color:#4B556B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cx-pf{border-left:1px solid var(--cx-line);overflow:auto;background:#fff}.cx-pft{text-align:center;padding:18px 14px 14px;border-bottom:1px solid var(--cx-line)}.cx-pft .cx-av{width:60px;height:60px;font-size:21px;margin:0 auto 8px}.cx-pft h4{margin:0;font-size:16px}
+.cx-sec{padding:12px 14px;border-bottom:1px solid #EEF1F7}.cx-sec h5{margin:0 0 8px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--cx-mut)}
+.cx-kv{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:13px}.cx-kv span{color:var(--cx-mut)}.cx-kv b{text-align:right;font-weight:600;word-break:break-word}
+.cx-vz{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;color:var(--cx-mut);padding:40px 20px;height:100%}.cx-vz svg{width:42px;height:42px;color:#B5BED0}
+.cx-tag{font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;background:var(--cx-pri-s);color:var(--cx-pri);border-radius:8px;padding:2px 8px}
+@media(max-width:1600px){.cx,.cx.sem-pf{grid-template-columns:minmax(280px,330px) minmax(0,1fr);position:relative}.cx .cx-pf{display:none;position:absolute;right:0;top:0;bottom:0;width:310px;z-index:6;box-shadow:-12px 0 30px rgba(10,23,51,.14)}.cx.com-pf .cx-pf{display:block}}
+.cx-chh .tb{display:inline}@media(max-width:1350px){.cx-chh .tb{display:none}}
+@media(max-width:760px){.cx{grid-template-columns:1fr;height:calc(100vh - 110px)}.cx .cx-ch{display:none}.cx.chat .cx-lst{display:none}.cx.chat .cx-ch{display:flex}}
+</style>`);
+
+const CX_TABS={atendimentos:'portal',suporteApp:'app',chamados:'chamado',pedidos:'pedido',liberacoes:'liberacao'};
+const CX_NOME={portal:'Chat dos portais',app:'App do cliente',chamado:'Chamados',pedido:'Pedidos dos clientes',liberacao:'Pedidos de liberação'};
+const CX_PED={VENCIMENTO:'Mudar vencimento',ACORDO:'Acordo do atraso',DADOS:'Atualizar dados',LGPD_COPIA:'Cópia dos dados (LGPD)',LGPD_EXCLUSAO:'Exclusão dos dados (LGPD)',ASSISTENCIA:'Assistência técnica',PROTECAO:'Acionar a proteção',UPGRADE:'Trocar de aparelho'};
+const CX_RESP=[['Atendimento',[['Saudação','Olá, {nome}! Aqui é {atendente}, da NexumCell. Já estou com o seu atendimento.'],['Pedir print','Pode me mandar um print da tela com a mensagem que aparece? Assim vejo exatamente o que está acontecendo.'],['Aguarde','Estou verificando para você. Em instantes eu retorno por aqui.']]],
+  ['Pagamento',[['Como pagar','Para pagar: abra o app NexumCell no celular → aba Parcelas → Pagar com PIX. O aparelho libera sozinho alguns minutos depois que o pagamento cai.'],['Pagamento confirmado','Pagamento confirmado, {nome}! O aparelho libera sozinho em instantes. Se não liberar, toque em Atualizar no app.']]],
+  ['Trava',[['Liberou','Pronto, {nome}! O aparelho foi liberado. Conecte na internet e toque em Atualizar no app.']]],
+  ['Encerramento',[['Resolvido?','Consegui resolver para você? Se estiver tudo certo, vou concluir este atendimento.'],['Encerramento','Obrigado pelo contato, {nome}! Vou concluir este atendimento (protocolo {protocolo}). Se precisar, é só chamar.']]]];
+const CX_IC={busca:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',ok:'<path d="m5 12 5 5L20 7"/>',x:'<path d="M18 6 6 18M6 6l12 12"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',raio:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',nota:'<path d="M4 4h12l4 4v12H4z"/><path d="M8 12h8M8 16h5"/>',
+  enviar:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',voltar:'<path d="M15 18l-6-6 6-6"/>',inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v7H2v-7z"/>',cel:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/>',crm:'<path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/>',cadeado:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'};
+const cxI=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${CX_IC[n]||''}</svg>`;
+const cxCor=n=>{ let h=0; for(const c of String(n||'?')) h=(h*31+c.charCodeAt(0))%360; return `hsl(${h} 55% 45%)`; };
+const cxIni=n=>String(n||'?').replace(/[^\p{L}\s]/gu,' ').trim().split(/\s+/).filter(Boolean).slice(0,2).map(p=>p[0]).join('').toUpperCase()||'?';
+const cxQuando=ms=>{ if(!ms) return ''; const d=new Date(ms), h=new Date(); return d.toDateString()===h.toDateString()?d.toLocaleTimeString('pt-BR').slice(0,5):d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); };
+const cxMin=m=>m<60?m+' min':Math.floor(m/60)+'h'+String(m%60).padStart(2,'0');
+function cxTag(n){ let x=(Math.max(0,Math.floor(+n||0))*1103515245+12345)%8031810176, s=''; for(let i=0;i<7;i++){ s=String.fromCharCode(65+(x%26))+s; x=Math.floor(x/26); } return 'N'+s; }
+const cxSo=s=>String(s||'').replace(/\D/g,'');
+const cxConv={
+  portal:a=>{ const ms=a.msgs||[], u=ms[ms.length-1]||{}; return {canal:'portal',col:'atendimentos',id:a.id,nome:a.nome||a.abertoPorNome||'Equipe da loja',sub:`${a.perfil||a.role||'Portal'}${a.lojaNome?' · '+a.lojaNome:''}${a.categoria?' · '+a.categoria:''}`,fila:'suporte',
+    etapa:a.status==='CONCLUIDO'?'fim':!ms.some(m=>m.de==='atendente'&&!m.auto)?'novo':u.de==='user'?'atendendo':'aguardando',ultima:u.t||'',ultimaDe:u.de==='user'?'cli':'nos',em:a.atualizadoEm||a.criadoEm||0,nl:!!a.naoLidoSuporte,protocolo:a.protocolo||a.id.slice(0,8).toUpperCase(),raw:a}; },
+  app:x=>({canal:'app',col:'suporteApp',id:x.id,nome:x.clienteNome||'Cliente',sub:`Contrato nº ${x.vendaNumero||'—'} · ${[x.marca,x.modelo].filter(Boolean).join(' ')}${x.bloqueado?' · bloqueado':''}`,fila:x.bloqueado?'financeiro':'suporte',
+    etapa:x.concluidoEm&&x.concluidoEm>=(x.atualizadoEm||0)?'fim':x.naoLidoSuporte?(x.atendidoEm?'atendendo':'novo'):'aguardando',ultima:x.ultimaMsg||'Mensagem pelo app',ultimaDe:x.naoLidoSuporte?'cli':'nos',em:x.atualizadoEm||0,nl:!!x.naoLidoSuporte,protocolo:'APP-'+String(x.vendaNumero||x.id.slice(0,6)),token:x.id,raw:x}),
+  chamado:c=>{ const rs=c.respostas||[], u=rs[rs.length-1]; return {canal:'chamado',col:'chamados',id:c.id,nome:c.abertoPorNome||'Equipe',sub:`${c.assunto||'Chamado'}${c.cliente?' · '+c.cliente:''}`,fila:c.setor==='FINANCEIRO'?'financeiro':'suporte',
+    etapa:c.status==='RESOLVIDO'?'fim':!rs.length?'novo':u?.uid===c.abertoPor?'atendendo':'aguardando',ultima:u?.texto||c.descricao||'',ultimaDe:!u||u.uid===c.abertoPor?'cli':'nos',em:u?.em||c.criadoEm||0,nl:!rs.length||u?.uid===c.abertoPor,protocolo:'CH-'+c.id.slice(0,6).toUpperCase(),raw:c}; },
+  pedido:p=>({canal:'pedido',col:'pedidos',id:p.id,nome:p.clienteNome||'Cliente',sub:`${CX_PED[p.tipo]||p.tipo} · nº ${p.vendaNumero||'—'}`,fila:['VENCIMENTO','ACORDO'].includes(p.tipo)?'financeiro':'suporte',etapa:['ENTREGUE','RECUSADO','ATENDIDO'].includes(p.status)?'fim':p.resposta?'aguardando':'novo',
+    ultima:p.resposta||p.descricao||'',ultimaDe:p.resposta?'nos':'cli',em:p.respondidoEm||p.criadoEm||0,nl:!p.resposta&&p.status==='ABERTO',protocolo:'PD-'+p.id.slice(0,6).toUpperCase(),token:p.token,raw:p}),
+  liberacao:l=>({canal:'liberacao',col:'liberacoes',id:l.id,nome:l.clienteNome||'Cliente',sub:`Parcela ${l.parcela||'—'} · ${l.diasAtraso||0} dia(s) de atraso · sugere ${l.sugestaoHoras||24} h`,fila:'financeiro',etapa:l.status==='PENDENTE'?'novo':'fim',
+    ultima:l.pedidoCliente||l.motivoBot||'Pedido de liberação pelo app',ultimaDe:'cli',em:l.decididoEm||l.em||0,nl:l.status==='PENDENTE',protocolo:'LB-'+l.id.slice(-6).toUpperCase(),token:l.token,raw:l}),
+};
+const CX_Q={portal:['atendimentos','atualizadoEm'],app:['suporteApp','atualizadoEm'],chamado:['chamados','criadoEm'],pedido:['pedidos','criadoEm'],liberacao:['liberacoes','em']};
+S.cx=S.cx||{sel:{},etapa:'abertos',q:'',itens:[],atrib:{},cfg:null,equipe:null};
+const cxKey=i=>i.canal+':'+i.id, cxAid=k=>k.replace(/[/:]/g,'_');
+const cxSemResp=i=>i.etapa!=='fim'&&i.ultimaDe==='cli';
+const cxResp=()=>S.cx.cfg?.respostas||CX_RESP;
+function cxPreencher(t,i){ const tk=i?.token||i?.raw?.token||'', pc=(typeof URLS!=='undefined'&&URLS.cliente)||new URL('../cliente/',location.href).href;
+  return String(t).replace(/\{nome\}/g,String(i?.nome||'').split(' ')[0]).replace(/\{atendente\}/g,String(S.me.nome||'').split(' ')[0]).replace(/\{protocolo\}/g,i?.protocolo||'').replace(/\{portalCliente\}/g,pc).replace(/\{linkContrato\}/g,tk?pc+'?contrato='+encodeURIComponent(tk):pc).replace(/\{linkPre\}/g,pc+'?pre').replace(/\{linkSite\}/g,pc).replace(/\{fila\}/g,''); }
+
+async function cxCarregar(canal){
+  const [col,campo]=CX_Q[canal], desde=Date.now()-30*864e5;
+  const [l,at]=await Promise.all([DB.list(col,[[campo,'>=',desde]]).catch(e=>{ console.warn('cx',col,e); return []; }),DB.list('crmAtrib').catch(()=>[])]);
+  S.cx.atrib=Object.fromEntries(at.map(a=>[a.key,a]));
+  S.cx.itens=l.map(cxConv[canal]).map(i=>{ const a=S.cx.atrib[cxKey(i)]; if(a){ if(a.fila) i.fila=a.fila; if(a.uid) i.resp={uid:a.uid,nome:a.nome}; } return i; }).sort((a,b)=>(b.nl-a.nl)||(b.em-a.em));
+  if(!S.cx.cfg){ S.cx.cfg=await DB.get('config','crm').catch(()=>null)||{}; }
+  if(!S.cx.equipe){ const rs=await Promise.all(['SUPORTE','FINANCEIRO','COMERCIAL','DONO'].map(r=>DB.list('users',[['role','==',r]]).catch(()=>[]))); S.cx.equipe=rs.flat().filter(u=>u.ativo!==false&&u.nome); if(!S.cx.equipe.some(u=>u.id===S.me.uid)) S.cx.equipe.push({id:S.me.uid,nome:S.me.nome}); }
+}
+function cxLista(){ const q=(S.cx.q||'').toLowerCase(), e=S.cx.etapa;
+  return S.cx.itens.filter(i=>(e==='fim'?i.etapa==='fim':e==='semresp'?cxSemResp(i):i.etapa!=='fim')&&(!q||`${i.nome} ${i.sub} ${i.protocolo} ${i.ultima}`.toLowerCase().includes(q))); }
+const cxAv=(i,t=40)=>`<div class="cx-av" style="background:${cxCor(i.nome)};width:${t}px;height:${t}px;font-size:${Math.round(t*.35)}px">${esc(cxIni(i.nome))}</div>`;
+const cxTags=i=>`<span class="cx-pill" style="background:${i.fila==='financeiro'?'#E6F6EE':'#EAF0FF'};color:${i.fila==='financeiro'?'#0E8A5F':'#1D5BFF'}">${i.fila==='financeiro'?'Financeiro':'Suporte'}</span>${i.resp?`<span class="cx-pill">${cxI('user')}${esc(String(i.resp.nome).split(' ')[0])}</span>`:'<span class="cx-pill" style="background:#FFF5E0;color:#B7791F">Sem responsável</span>'}`;
+
+async function cxPagina(tab){
+  const canal=CX_TABS[tab]; S.cx.canal=canal; S.cx.tab=tab;
+  $('#topActions').innerHTML=`<a class="btn" href="${esc(typeof urlCrm==='function'?urlCrm():'../dono/crm/')}" target="_blank" rel="noopener">Abrir o CRM completo</a>`;
+  $('#view').innerHTML=`<div class="cx" id="cx"><section class="cx-lst" id="cxL"><div class="cx-vz">Carregando…</div></section><section class="cx-ch" id="cxC"></section><aside class="cx-pf" id="cxP"></aside></div>`;
+  cxAltura(); await cxCarregar(canal); if(S.tab!==tab) return; cxAltura(); cxPintarLista(); cxAbrir(S.cx.sel[canal]||'',true);
+  clearInterval(S.cx.tm); S.cx.tm=setInterval(async()=>{ if(S.tab!==tab||!$('#cx')){ clearInterval(S.cx.tm); return; } if(document.hidden) return;
+    const antes=JSON.stringify(S.cx.itens.map(i=>[i.id,i.em,i.etapa,i.resp?.uid])); await cxCarregar(canal); if(S.tab!==tab||!$('#cx')) return;
+    if(JSON.stringify(S.cx.itens.map(i=>[i.id,i.em,i.etapa,i.resp?.uid]))!==antes){ cxPintarLista(); const i=cxItem(); if(i&&document.activeElement?.id!=='cxTxt'){ cxTopo(i); cxMsgs(i); } else if(i) cxMsgs(i); } },15000);
+}
+function cxAltura(){ const c=$('#cx'); if(!c) return; const t=c.getBoundingClientRect().top+scrollY; c.style.height=Math.max(520,innerHeight-t-18)+'px'; }
+addEventListener('resize',()=>cxAltura());
+const cxItem=()=>S.cx.itens.find(i=>i.id===S.cx.sel[S.cx.canal]);
+function cxPintarLista(){
+  const el=$('#cxL'); if(!el) return; const l=cxLista(), ab=S.cx.itens.filter(i=>i.etapa!=='fim'), sc=$('.cx-b',el)?.scrollTop||0, foco=document.activeElement?.id==='cxQ', ini0=new Date(hoje()+'T00:00:00-03:00').getTime();
+  el.innerHTML=`<div class="cx-h"><h3>${CX_NOME[S.cx.canal]}<small>${S.cx.itens.length} nos últimos 30 dias</small></h3><div class="cx-busca">${cxI('busca')}<input id="cxQ" placeholder="Buscar nome, protocolo ou mensagem" value="${esc(S.cx.q)}" autocomplete="off"></div>
+    <div class="cx-tabs">${[['abertos','Abertos'],['semresp','Sem resposta'],['fim','Finalizados']].map(([k,n])=>`<button data-act="cxEtapa" data-e="${k}" class="${S.cx.etapa===k?'on':''}">${n}</button>`).join('')}</div>
+    <div class="cx-mt"><div><b>${ab.length}</b><span>Abertos</span></div><div><b style="color:${ab.filter(cxSemResp).length?'#C23B3B':'inherit'}">${ab.filter(cxSemResp).length}</b><span>Sem resposta</span></div><div><b>${ab.filter(i=>i.resp?.uid===S.me.uid).length}</b><span>Meus</span></div><div><b style="color:#0E8A5F">${S.cx.itens.filter(i=>i.etapa==='fim'&&i.em>=ini0).length}</b><span>Finalizados hoje</span></div></div></div>
+    <div class="cx-b">${l.map(i=>{ const urg=cxSemResp(i)&&Date.now()-i.em>=60*60e3; return `<div class="cx-it ${i.id===S.cx.sel[S.cx.canal]?'on':''} ${urg?'urg':''} ${i.nl?'nl':''}" data-act="cxAbrir" data-id="${esc(i.id)}">${cxAv(i)}<div class="cx-tx"><div class="cx-l1"><b>${esc(i.nome)}</b><time>${cxQuando(i.em)}</time></div>
+      <div class="cx-l2"><span>${i.ultimaDe==='nos'?'<b style="font-weight:500">Você: </b>':''}${esc(String(i.ultima||i.sub).replace(/\*/g,''))}</span>${i.nl?'<i>1</i>':''}</div><div class="cx-l3">${cxTags(i)}${urg?`<span class="cx-pill" style="background:#FDECEC;color:#C23B3B">Esperando ${cxMin(Math.round((Date.now()-i.em)/6e4))}</span>`:''}</div></div></div>`; }).join('')||`<div class="cx-vz">${cxI('inbox')}<div>${S.cx.q?'Nada encontrado.':S.cx.etapa==='semresp'?'Ninguém esperando resposta.':'Nenhum atendimento aqui.'}</div></div>`}</div>`;
+  $('.cx-b',el).scrollTop=sc; const q=$('#cxQ'); let t; q.oninput=()=>{ clearTimeout(t); t=setTimeout(()=>{ S.cx.q=q.value; cxPintarLista(); },220); }; if(foco){ q.focus(); q.setSelectionRange(q.value.length,q.value.length); }
+}
+function cxTopoHTML(i){
+  const fim=i.etapa==='fim', meu=i.resp?.uid===S.me.uid;
+  return `<button class="cx-ib cx-volta" data-act="cxVoltar" aria-label="Voltar" style="display:${innerWidth<=760?'flex':'none'}">${cxI('voltar')}</button>${cxAv(i,40)}<div class="nm"><b>${esc(i.nome)}</b><span>${esc(CX_NOME[i.canal])} · ${esc(i.protocolo)}${i.sub?' · '+esc(i.sub):''}</span></div>
+    ${!meu&&!fim?`<button class="btn sm" data-act="cxAssumir" title="Assumir">${cxI('user')}<span class="tb"> Assumir</span></button>`:''}
+    <select id="cxResp" aria-label="Responsável">${!i.resp?'<option value="">Sem responsável</option>':''}${S.cx.equipe.map(u=>`<option value="${u.id}" ${i.resp?.uid===u.id?'selected':''}>${esc(u.nome)}</option>`).join('')}</select>
+    <button class="cx-ib" data-act="cxFicha" title="Ficha do cliente">${cxI('info')}</button>
+    ${fim?`<span class="cx-pill" style="background:#E6F6EE;color:#0E8A5F">${cxI('ok')}Finalizado</span>`:i.canal==='liberacao'?'':`<button class="btn gold sm" data-act="cxFim" title="Finalizar">${cxI('ok')}<span class="tb"> Finalizar</span></button>`}`;
+}
+function cxTopo(i){ const h=$('#cxH'); if(!h||document.activeElement?.id==='cxResp') return; h.innerHTML=cxTopoHTML(i); $('#cxResp').onchange=e=>cxAtribuir(i,e.target.value); }
+function cxAbrir(id,inicio){
+  S.cx.sel[S.cx.canal]=id; const i=cxItem(), el=$('#cxC'), pf=$('#cxP'); if(!el) return;
+  if(!i){ el.innerHTML=`<div class="cx-vz">${cxI('inbox')}<b style="color:#0A1733;font-size:17px">Selecione um atendimento</b><span>A conversa, as ações e a ficha do cliente aparecem aqui. Tudo fica junto com o CRM: responsável, notas e respostas rápidas.</span></div>`; pf.innerHTML=`<div class="cx-vz">${cxI('user')}<span>A ficha do cliente aparece aqui.</span></div>`; return; }
+  if(!inicio) $('#cx').classList.add('chat');
+  el.innerHTML=`<div class="cx-chh" id="cxH"></div><div class="cx-msgs" id="cxM"><div class="cx-vz">Carregando…</div></div><div class="cx-cp" id="cxCp"></div>`;
+  cxTopo(i); cxMsgs(i); cxCompositor(i); cxFicha(i); cxPintarLista();
+  if(i.nl&&i.canal==='portal') DB.set('atendimentos',i.id,{naoLidoSuporte:false}).catch(()=>{});
+}
+async function cxMsgs(i){
+  const r=i.raw; let ms=[];
+  if(i.canal==='portal') ms=(r.msgs||[]).map(m=>({t:m.t,em:m.em,nos:m.de==='atendente',de:m.de,quem:m.de==='user'?(m.por||i.nome):m.de==='bot'?'Assistente':(m.por||'NexumCell'),auto:m.auto}));
+  else if(i.canal==='app'||i.canal==='liberacao'){ const tk=i.canal==='app'?i.id:r.token; const l=tk?await DB.list(`suporteApp/${tk}/msgs`).catch(()=>[]):[];
+    if(i.canal==='liberacao') ms.push({t:`Pedido de liberação pelo app\nParcela ${r.parcela||'—'} · ${r.diasAtraso||0} dia(s) de atraso\nSugestão: liberar ${r.sugestaoHoras||24} h${r.pedidoCliente?'\n\n“'+r.pedidoCliente+'”':''}${r.motivoBot?'\n\nAssistente: '+r.motivoBot:''}`,em:r.em,quem:i.nome});
+    ms.push(...l.sort((a,b)=>a.em-b.em).filter(m=>i.canal==='app'||m.em>=(r.em||0)-864e5).map(m=>({t:m.texto,em:m.em,nos:m.de!=='cliente',quem:m.de==='cliente'?i.nome:(m.porNome||'Suporte'),auto:m.auto})));
+    if(i.canal==='liberacao'&&r.status!=='PENDENTE') ms.push({tipo:'sis',t:r.status==='APROVADA'?`Liberado por ${r.horas} h · ${r.porNome||''}`:`Recusado · ${r.porNome||''}${r.motivoRecusa?' · '+r.motivoRecusa:''}`,em:r.decididoEm}); }
+  else if(i.canal==='chamado') ms=[{t:`${r.assunto||''}\n\n${r.descricao||''}`,em:r.criadoEm,quem:r.abertoPorNome},...(r.respostas||[]).map(x=>({t:x.texto,em:x.em,nos:x.uid!==r.abertoPor,quem:x.nome}))];
+  else if(i.canal==='pedido') ms=[{t:`${CX_PED[r.tipo]||r.tipo}\n${r.descricao||''}${r.dados?'\nNovos dados: '+Object.entries(r.dados).map(([k,v])=>k+': '+v).join(', '):''}`,em:r.criadoEm,quem:r.clienteNome},...(r.resposta?[{t:r.resposta,em:r.respondidoEm,nos:true,quem:r.respondidoPor||'NexumCell'}]:[])];
+  const notas=await DB.list('crmNotas',[['key','==',cxKey(i)]]).catch(()=>[]);
+  ms.push(...notas.map(n=>({tipo:'nota',t:n.t,em:n.em,quem:n.por})));
+  ms.sort((a,b)=>(a.em||0)-(b.em||0));
+  const el=$('#cxM'); if(!el||cxItem()?.id!==i.id) return; const sig=JSON.stringify(ms.map(m=>[m.em,m.t])); if(el.dataset.sig===sig) return; el.dataset.sig=sig;
+  let dia='',h=''; const hojeS=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long'});
+  for(const m of ms){ const d=m.em?new Date(m.em).toLocaleDateString('pt-BR',{day:'2-digit',month:'long'}):''; if(d&&d!==dia){ dia=d; h+=`<div class="cx-dia">${d===hojeS?'Hoje':d}</div>`; }
+    const hr=m.em?new Date(m.em).toLocaleTimeString('pt-BR').slice(0,5):'', t=esc(m.t||'').replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');
+    h+=m.tipo==='sis'?`<div class="cx-m sis">${t} · ${hr}</div>`:`<div class="cx-m ${m.tipo==='nota'?'nota':m.de==='bot'?'bot':m.nos?'eu':''}"><small>${m.tipo==='nota'?'Nota interna · ':''}${esc(m.quem||'')}${m.auto?' · automática':''}</small>${t}<div class="h">${hr}</div></div>`; }
+  el.innerHTML=h||`<div class="cx-vz">Sem mensagens ainda.</div>`; el.scrollTop=el.scrollHeight;
+}
+function cxCompositor(i){
+  const el=$('#cxCp'), r=i.raw, fim=i.etapa==='fim';
+  const acoes=i.canal==='liberacao'&&r.status==='PENDENTE'?`<button class="cx-f" data-act="cxLib" data-h="24" style="color:#0E8A5F">${cxI('ok')}Liberar 24 h</button><button class="cx-f" data-act="cxLib" data-h="48" style="color:#0E8A5F">${cxI('ok')}Liberar 48 h</button><button class="cx-f" data-act="cxLib" data-h="0" style="color:#C23B3B">${cxI('x')}Recusar</button>`
+    :i.canal==='pedido'?`<span class="cx-f">Situação <select id="cxPdSt">${['ABERTO','RECEBIDO','EM_REPARO','PRONTO','ATENDIDO','ENTREGUE','RECUSADO'].map(s=>`<option ${r.status===s?'selected':''}>${s}</option>`).join('')}</select></span>`
+    :i.canal==='chamado'&&!fim?`<span class="cx-f">Situação <select id="cxChSt">${['ABERTO','ANDAMENTO','RESOLVIDO'].map(s=>`<option ${r.status===s?'selected':''}>${s}</option>`).join('')}</select></span>`:'';
+  const semEnvio=i.canal==='liberacao'&&!r.token;
+  el.innerHTML=`<div class="cx-cpt"><button class="cx-f" data-act="cxRespostas">${cxI('raio')}Respostas</button><button class="cx-f" data-act="cxNota">${cxI('nota')}Nota interna</button>${acoes}</div>
+    <div class="cx-cpr"><textarea id="cxTxt" rows="1" ${semEnvio?'disabled':''} placeholder="${semEnvio?'Sem conversa no app para este pedido':'Escreva uma mensagem… (Enter envia · Shift+Enter quebra a linha · / respostas)'}"></textarea><button class="btn gold" data-act="cxEnviar" aria-label="Enviar" style="height:44px">${cxI('enviar')}</button></div>`;
+  const tx=$('#cxTxt'); let sug=[],k=0;
+  const fecha=()=>{ $('#cxSug')?.remove(); sug=[]; }, usa=s=>{ tx.value=cxPreencher(s.x,i); fecha(); tx.focus(); };
+  const pinta=()=>{ const q=tx.value.slice(1).toLowerCase(); sug=cxResp().flatMap(([g,l])=>l.map(([t,x])=>({g,t,x}))).filter(s=>!q||(s.t+' '+s.g+' '+s.x).toLowerCase().includes(q)).slice(0,8); k=Math.min(k,Math.max(0,sug.length-1)); $('#cxSug')?.remove(); if(!sug.length) return;
+    el.insertAdjacentHTML('afterbegin',`<div class="cx-sug" id="cxSug"><div class="hd">Respostas rápidas<span>↑ ↓ · Enter usa · Esc fecha</span></div>${sug.map((s,n)=>`<div class="si ${n===k?'on':''}" data-n="${n}"><b>/${esc(s.t.toLowerCase().replace(/\s+/g,'-'))}</b><span>${esc(s.g)}</span><p>${esc(cxPreencher(s.x,i))}</p></div>`).join('')}</div>`);
+    el.querySelectorAll('.si').forEach(d=>d.onmousedown=e=>{ e.preventDefault(); usa(sug[+d.dataset.n]); }); };
+  tx.oninput=()=>{ tx.style.height='auto'; tx.style.height=Math.min(170,tx.scrollHeight)+'px'; /^\/\S*$/.test(tx.value)?pinta():fecha(); };
+  tx.onblur=()=>setTimeout(fecha,150);
+  tx.onkeydown=e=>{ if(sug.length){ if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); k=(k+(e.key==='ArrowDown'?1:-1)+sug.length)%sug.length; return pinta(); } if(e.key==='Enter'||e.key==='Tab'){ e.preventDefault(); return usa(sug[k]); } if(e.key==='Escape') return fecha(); }
+    if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); cxEnviar(i); } };
+  if($('#cxPdSt')) $('#cxPdSt').onchange=e=>cxSalvar(i,()=>DB.set('pedidos',i.id,{status:e.target.value,atualizadoEm:Date.now()}),'Pedido: '+e.target.value);
+  if($('#cxChSt')) $('#cxChSt').onchange=e=>cxSalvar(i,()=>DB.set('chamados',i.id,{status:e.target.value,...(e.target.value==='RESOLVIDO'?{resolvidoEm:Date.now(),resolvidoPor:S.me.nome}:{})}),'Chamado: '+e.target.value);
+}
+async function cxSalvar(i,fn,ok){ try{ await fn(); toast(ok,'ok'); await cxCarregar(S.cx.canal); cxPintarLista(); const n=cxItem(); if(n){ cxTopo(n); cxMsgs(n); cxCompositor(n); } }catch(e){ toast('Não salvou: '+(e.code||e.message),'err'); } }
+async function cxEnviar(i,texto){
+  const t=(texto??$('#cxTxt')?.value??'').trim(); if(!t) return; const ag=Date.now(), quem=S.me.nome;
+  await cxSalvar(i,async()=>{
+    if(i.canal==='portal'){ const a=await DB.get('atendimentos',i.id); await DB.set('atendimentos',i.id,{msgs:[...(a.msgs||[]),{de:'atendente',t:t.slice(0,3000),em:ag,por:quem}],naoLidoUser:true,naoLidoSuporte:false,atendente:quem,atualizadoEm:ag,...(a.status==='BOT'?{status:'HUMANO'}:{})}); }
+    else if(i.canal==='app'||i.canal==='liberacao'){ const tk=i.canal==='app'?i.id:i.raw.token; await DB.add(`suporteApp/${tk}/msgs`,{de:'suporte',texto:t.slice(0,2000),em:ag,porNome:quem.split(' ')[0]}); await DB.set('suporteApp',tk,{naoLidoCliente:true,atendidoPor:quem,atendidoEm:ag,atualizadoEm:ag,naoLidoSuporte:false,ultimaMsg:t.slice(0,120)}); }
+    else if(i.canal==='chamado'){ const c=await DB.get('chamados',i.id); await DB.set('chamados',i.id,{respostas:[...(c.respostas||[]),{nome:quem,uid:S.me.uid,em:ag,texto:t}],status:c.status==='ABERTO'?'ANDAMENTO':c.status}); }
+    else if(i.canal==='pedido') await DB.set('pedidos',i.id,{resposta:t,respondidoEm:ag,respondidoPor:quem,status:i.raw.status==='ABERTO'?'RECEBIDO':i.raw.status});
+    if(!i.resp) await DB.set('crmAtrib',cxAid(cxKey(i)),{key:cxKey(i),fila:i.fila,uid:S.me.uid,nome:quem,em:ag,por:quem});
+  },'Mensagem enviada');
+  const x=$('#cxTxt'); if(x){ x.value=''; x.style.height='auto'; }
+}
+function cxAtribuir(i,uid){ const u=S.cx.equipe.find(x=>x.id===uid); cxSalvar(i,()=>DB.set('crmAtrib',cxAid(cxKey(i)),{key:cxKey(i),fila:i.fila,uid:uid||'',nome:u?.nome||'',em:Date.now(),por:S.me.nome}),u?'Responsável: '+u.nome:'Sem responsável'); }
+async function cxFicha(i){
+  const el=$('#cxP'); if(!el) return; const r=i.raw;
+  el.innerHTML=`<div class="cx-pft"><button class="cx-ib" data-act="cxFicha" title="Fechar" style="float:right;margin:-6px -4px 0 0">${cxI('x')}</button>${cxAv(i,60)}<h4>${esc(i.nome)}</h4><div class="cx-l3" style="justify-content:center;margin-top:6px">${cxTags(i)}</div></div>
+    <div class="cx-sec"><h5>Atendimento</h5><div class="cx-kv"><span>Canal</span><b>${esc(CX_NOME[i.canal])}</b><span>Protocolo</span><b>${esc(i.protocolo)}</b><span>Responsável</span><b>${esc(i.resp?.nome||'—')}</b>${i.canal==='portal'?`<span>Perfil</span><b>${esc(r.perfil||r.role||'—')}</b><span>Loja</span><b>${esc(r.lojaNome||'—')}</b>`:''}${i.canal==='chamado'?`<span>Setor</span><b>${esc(r.setor||'—')}</b><span>Loja</span><b>${esc(r.lojaNome||'—')}</b>`:''}</div></div><div class="cx-sec" id="cxCli"><span class="small muted">Procurando o cliente…</span></div>`;
+  if(i.canal==='portal'){ $('#cxCli').remove(); return; }
+  const q=i.canal==='app'||i.canal==='liberacao'?{token:i.token||r.token||i.id}:i.canal==='pedido'?{vendaId:r.vendaId,token:r.token}:r.imei?{imei:r.imei}:r.cpf?{cpf:r.cpf}:{};
+  let vs=[],aps={};
+  try{ let {token,vendaId,imei,cpf}=q;
+    if(token){ const ap=await DB.get('aparelhos',token).catch(()=>null); if(ap?.vendaId) vendaId=ap.vendaId; if(ap?.clienteCpf) cpf=ap.clienteCpf; }
+    if(vendaId&&!cpf){ const v=await DB.get('vendas',vendaId).catch(()=>null); if(v){ cpf=v.clienteCpf; vs=[v]; } }
+    if(imei&&!cpf){ const l=await DB.list('aparelhos',[['imei','==',imei]]).catch(()=>[]); if(l[0]?.vendaId){ const v=await DB.get('vendas',l[0].vendaId).catch(()=>null); if(v){ cpf=v.clienteCpf; vs=[v]; } } }
+    if(cpf) vs=await DB.list('vendas',[['clienteCpf','==',cxSo(cpf)]]).catch(()=>vs);
+    vs=vs.filter(v=>v.status!=='REPROVADA').sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0)).slice(0,3);
+    for(const v of vs) if(v.aparelhoToken) aps[v.id]=await DB.get('aparelhos',v.aparelhoToken).catch(()=>null); }catch(e){}
+  const box=$('#cxCli'); if(!box||cxItem()?.id!==i.id) return;
+  if(!vs.length){ box.innerHTML='<h5>Cliente NexumCell</h5><p class="small muted" style="margin:0">Nenhum contrato encontrado. Peça a Device Tag (app NexumCell → aba Contrato) e procure no CRM, em Clientes.</p>'; return; }
+  const v0=vs[0], c=v0.cliente||{}, h=hoje(), tag=cxTag(v0.numero);
+  box.outerHTML=`<div class="cx-sec"><h5>Cliente NexumCell</h5><div class="cx-kv">${tag?`<span>Device Tag</span><b><span class="cx-tag">${tag}</span></b>`:''}<span>CPF</span><b>${fmtCpf(v0.clienteCpf)}</b><span>Telefone</span><b>${esc((c.telefones||[]).join(' · ')||'—')}</b><span>Cidade</span><b>${esc([c.cidade,c.uf].filter(Boolean).join('/')||'—')}</b><span>Contratos</span><b>${vs.length}</b></div></div>`+
+    vs.map(v=>{ const ps=v.parcelas||[], pagas=ps.filter(p=>p.pago).length, ab=ps.filter(p=>!p.pago).sort((a,b)=>a.venc.localeCompare(b.venc)), atr=ab.filter(p=>p.venc<h), ap=aps[v.id];
+      const st=!ap?null:ap.quitado?['Quitado','#0E8A5F','#E6F6EE']:(ap.liberadoAte||0)>Date.now()?['Liberado temporário','#1D5BFF','#EAF0FF']:ap.modo==='TRAVAR'?['Travado','#C23B3B','#FDECEC']:atr.length?['Em atraso','#B7791F','#FFF5E0']:['Em dia','#0E8A5F','#E6F6EE'];
+      return `<div class="cx-sec"><h5>Contrato nº ${v.numero}</h5><div style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><div class="cx-ib" style="background:#EAF0FF;color:#1D5BFF;border:0">${cxI('cel')}</div><div><b style="display:block;font-size:13.5px">${esc([v.aparelho?.marca,v.aparelho?.modelo].filter(Boolean).join(' ')||'—')}</b>${st?`<span class="cx-pill" style="background:${st[2]};color:${st[1]}">${st[0]}</span>`:''}</div></div>
+        <div class="cx-kv"><span>IMEI</span><b style="font-family:ui-monospace,Menlo,monospace;font-size:12px">${esc(v.aparelho?.imei||'—')}</b><span>Loja</span><b>${esc(v.lojaNome||'—')}</b><span>Parcelas</span><b>${pagas} de ${ps.length} pagas</b>${atr.length?`<span>Em atraso</span><b style="color:#C23B3B">${brl(atr.reduce((s,p)=>s+(+p.valor||0),0))}</b>`:ab[0]?`<span>Próxima</span><b>${ab[0].venc.split('-').reverse().join('/')} · ${brl(ab[0].valor)}</b>`:''}${ap?.checkin?.em?`<span>Último sinal</span><b>${new Date(ap.checkin.em).toLocaleString('pt-BR').slice(0,16)}</b>`:''}</div></div>`; }).join('');
+}
+async function cxConcluir(i){
+  const ag=Date.now(), msg=cxPreencher(cxResp().flatMap(g=>g[1]).find(r=>r[0]==='Encerramento')?.[1]||'Atendimento concluído. Protocolo {protocolo}.',i);
+  await cxSalvar(i,async()=>{
+    if(i.canal==='portal'){ const a=await DB.get('atendimentos',i.id); await DB.set('atendimentos',i.id,{msgs:[...(a.msgs||[]),{de:'atendente',t:msg,em:ag,por:S.me.nome,auto:true}],status:'CONCLUIDO',concluidoEm:ag,concluidoPor:S.me.nome,naoLidoUser:true,atualizadoEm:ag}); }
+    else if(i.canal==='app'){ await DB.add(`suporteApp/${i.id}/msgs`,{de:'suporte',texto:msg,em:ag,porNome:S.me.nome.split(' ')[0]}); await DB.set('suporteApp',i.id,{concluidoEm:ag+1,naoLidoSuporte:false,naoLidoCliente:true,atualizadoEm:ag}); }
+    else if(i.canal==='chamado') await DB.set('chamados',i.id,{status:'RESOLVIDO',resolvidoEm:ag,resolvidoPor:S.me.nome});
+    else if(i.canal==='pedido') await DB.set('pedidos',i.id,{status:['ASSISTENCIA','PROTECAO'].includes(i.raw.tipo)?'ENTREGUE':'ATENDIDO',atualizadoEm:ag});
+    try{ await log('Atendimento finalizado',CX_Q[i.canal][0],i.protocolo); }catch(e){}
+  },'Atendimento finalizado');
+}
+
+Object.keys(CX_TABS).forEach(t=>{ PAGES[t]=()=>cxPagina(t); });
+Object.assign(ACT,{
+  cxEtapa:d=>{ S.cx.etapa=d.e; cxPintarLista(); },
+  cxAbrir:d=>cxAbrir(d.id),
+  cxVoltar:()=>{ $('#cx')?.classList.remove('chat'); },
+  cxFicha:()=>{ const c=$('#cx'); if(!c) return; innerWidth<=1600?c.classList.toggle('com-pf'):c.classList.toggle('sem-pf'); },
+  cxAssumir:()=>{ const i=cxItem(); if(i) cxAtribuir(i,S.me.uid); },
+  cxFim:()=>{ const i=cxItem(); if(i&&confirm('Finalizar este atendimento? A mensagem de encerramento vai para o cliente.')) cxConcluir(i); },
+  cxEnviar:()=>{ const i=cxItem(); if(i) cxEnviar(i); },
+  cxNota:()=>{ const i=cxItem(); if(!i) return; const t=(prompt('Nota interna (só a equipe vê, também no CRM):')||'').trim(); if(t) cxSalvar(i,()=>DB.add('crmNotas',{key:cxKey(i),t,por:S.me.nome,uid:S.me.uid,em:Date.now()}),'Nota salva'); },
+  cxRespostas:()=>{ const i=cxItem(); if(!i) return; openModal(`<h2 style="margin-top:0">Respostas rápidas</h2><p class="small muted" style="margin-top:0">As mesmas do CRM. No chat, digite / para abrir mais rápido.</p>${cxResp().map(([g,l])=>`<h4 style="margin:12px 0 6px">${esc(g)}</h4>${l.map(([t,x])=>`<div class="card" style="padding:10px 12px;margin-bottom:6px;cursor:pointer" data-act="cxUsar" data-x="${esc(x)}"><b>${esc(t)}</b><div class="small muted">${esc(cxPreencher(x,i))}</div></div>`).join('')}`).join('')}<div class="row mt" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Fechar</button></div>`); },
+  cxUsar:d=>{ const i=cxItem(); closeModal(); const t=$('#cxTxt'); if(t&&i){ t.value=cxPreencher(d.x,i); t.focus(); t.dispatchEvent(new Event('input')); } },
+  cxLib:async d=>{ const i=cxItem(); if(!i) return; const h=+d.h, x=i.raw; let motivo='';
+    if(!h){ motivo=(prompt('Motivo da recusa (o cliente não vê):','Atraso longo, precisa pagar para liberar')||'').trim(); if(!motivo) return; } else if(!confirm(`Liberar o aparelho de ${i.nome} por ${h} horas?`)) return;
+    await cxSalvar(i,async()=>{ if(h) await DB.set('aparelhos',x.token,{modo:'AUTO',liberadoAte:Date.now()+h*3600e3,modoPor:S.me.nome,modoMotivo:`Pedido do cliente pelo app (parcela ${x.parcela})`});
+      await DB.set('liberacoes',i.id,{status:h?'APROVADA':'RECUSADA',horas:h||0,porNome:S.me.nome,por:S.me.uid,decididoEm:Date.now(),motivoRecusa:motivo||null});
+      if(h&&x.token) await DB.add(`suporteApp/${x.token}/msgs`,{de:'suporte',texto:`Liberamos o seu aparelho por ${h} horas. Regularize a parcela pelo app (aba Parcelas → PIX) para não bloquear de novo.`,em:Date.now(),porNome:S.me.nome.split(' ')[0]}).catch(()=>{});
+      try{ await log(h?`Liberou ${h} h pelo pedido do app`:'Recusou pedido de liberação','liberacoes',i.nome); }catch(e){} },h?`Liberado por ${h} h. O aparelho destrava em instantes.`:'Pedido recusado'); },
+});
+{ const base={atendimentos:['DONO','SUPORTE','FINANCEIRO'],suporteApp:['DONO','SUPORTE','FINANCEIRO'],liberacoes:['DONO','SUPORTE','FINANCEIRO'],chamados:['DONO','SUPORTE','FINANCEIRO'],pedidos:['DONO','SUPORTE','FINANCEIRO']};
+  Object.entries(base).forEach(([id,roles])=>{ if(!TABS.some(x=>x.id===id)) TABS.push({id,label:id,roles}); });
+  IC.liberacoes=IC.liberacoes||CX_IC.cadeado; IC.suporteApp=IC.suporteApp||CX_IC.cel; IC.atendimentos=IC.atendimentos||CX_IC.crm; IC.chamados=IC.chamados||CX_IC.nota; IC.pedidos=IC.pedidos||CX_IC.inbox; }
+{ const tabsAt=Object.keys(CX_TABS).filter(t=>{ const x=TABS.find(y=>y.id===t); return x&&x.roles.some(r=>can(r)||true); });
+  if(['suporte','financeiro'].includes(PORTAL)){
+    const ga=NAV_GRUPOS.find(g=>g[0]==='Atendimento')||(NAV_GRUPOS.splice(1,0,['Atendimento',[]]),NAV_GRUPOS[1]);
+    ga[1]=['atendimentos','suporteApp','liberacoes','chamados','pedidos','crm'].filter(t=>TABS.some(x=>x.id===t));
+    const k=P.tabs.indexOf('crm'); P.tabs=P.tabs.filter(t=>!CX_TABS[t]); P.tabs.splice(k>=0?k:2,0,...tabsAt.filter(t=>!P.tabs.includes(t)));
+    const tc=TABS.find(x=>x.id==='crm'); if(tc) tc.label='CRM completo';
+    const nm={atendimentos:'Chat dos portais',suporteApp:'App do cliente',liberacoes:'Pedidos de liberação',chamados:'Chamados',pedidos:'Pedidos dos clientes'}; TABS.forEach(x=>{ if(nm[x.id]) x.label=nm[x.id]; });
+    const ta=TABS.find(x=>x.id==='atendimentos'); if(ta&&!ta.roles.includes('FINANCEIRO')) ta.roles=[...ta.roles,'FINANCEIRO'];
+  } }
+
 </script>
 </body>
 </html>
