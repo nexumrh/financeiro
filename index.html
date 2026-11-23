@@ -9680,6 +9680,14 @@ async function cdEnviar() {
 { const _is2 = iniciarSessao; iniciarSessao = async function (p) { await _is2(p); try { cdIniciar(); } catch (e) { console.warn('chatDono', e); } }; }
 { const _s2 = sair; sair = async function () { try { CD.un && CD.un(); clearInterval(CD.timer); } catch (e) { } CD.sel = null; $('#cdP')?.remove(); $('#cdB')?.remove(); return _s2(); }; }
 
+
+/* atalho no menu: abre direto o app Metas & Bônus */
+ACT.abrirMetasApp = () => { window.open('https://nexumrh.github.io/metas/', '_blank', 'noopener'); };
+{ const _rn = renderNav; renderNav = async (...a) => { await _rn(...a); const nav = document.getElementById('nav'); if (!nav || nav.querySelector('[data-act=abrirMetasApp]')) return;
+  const gestor = typeof can === 'function' && can('DONO', 'GERENTE');
+  const b = document.createElement('button'); b.dataset.act = 'abrirMetasApp'; b.title = 'Abre o app Metas & Bônus em outra aba';
+  b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>' + (gestor ? 'Abrir app de metas' : 'Abrir Minhas Metas') + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;margin-left:auto;opacity:.6"><path d="M7 17 17 7M8 7h9v9"/></svg>';
+  const ini = nav.querySelector('[data-tab=inicio]'); if (ini) ini.after(b); else nav.prepend(b); }; }
 </script>
 </body>
 </html>
