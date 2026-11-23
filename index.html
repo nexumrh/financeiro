@@ -1897,7 +1897,7 @@ async function avisoTravas(){
     const ch=chips.length?`<div class="aviso-trava bad" data-act="verChips">${svg('<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 6h4"/>')}<b>Troca de chip em ${chips.length} aparelho(s)</b><span>Pode ser revenda ou golpe. Clique para conferir.</span></div>`:'';
     const rb=roubos.length?`<div class="aviso-trava bad" data-act="verRoubos">${svg(IC.listanegra)}<b>${roubos.length} cliente(s) comunicaram roubo, furto ou perda</b><span>O aparelho já foi travado. Clique para ver e tratar.</span></div>`:'';
     const dias=S.cfg.ultimoBackup?Math.floor((Date.now()-S.cfg.ultimoBackup)/86400000):999;
-    const bk=can('DONO')&&dias>=7?`<div class="aviso-trava" data-act="go" data-tab="config">${svg(IC.config)}<b>Faça a cópia de segurança da semana</b><span>${S.cfg.ultimoBackup?'Última há '+dias+' dias.':'Nenhuma cópia feita ainda.'} Clique para ir às configurações.</span></div>`:'';
+    const bk=can('DONO')&&PORTAL==='dono'&&dias>=7?`<div class="aviso-trava" data-act="go" data-tab="config">${svg(IC.config)}<b>Faça a cópia de segurança da semana</b><span>${S.cfg.ultimoBackup?'Última há '+dias+' dias.':'Nenhuma cópia feita ainda.'} Clique para ir às configurações.</span></div>`:'';
     let vs=(await loadVendas()).filter(v=>v.status==='INSTALANDO');
     const ss=can('DONO','FINANCEIRO','SUPORTE')?aps.filter(a=>a.status==='ATIVO'&&!a.quitado&&a.checkin?.em&&Date.now()-a.checkin.em>86400000*diasSemSinal()):[];
     const fx=can('DONO','FINANCEIRO','SUPORTE')?aps.filter(a=>a.status==='ATIVO'&&!a.quitado&&foraDoPais(a)):[]; marcarForaDoPais(aps);
@@ -4120,7 +4120,7 @@ PAGES.repasses = async () => {
   const lista=(f.st==='PENDENTE'?pend:f.st==='PAGO'?pago:base).sort((a,b)=>repData(a)-repData(b));
   const porLoja={}; base.forEach(v=>{ const k=v.lojaId||'-'; porLoja[k]=porLoja[k]||{nome:v.lojaNome||'Loja',pend:0,pago:0,n:0}; porLoja[k][repStatus(v)==='PAGO'?'pago':'pend']+=repValor(v); if(repStatus(v)==='PENDENTE') porLoja[k].n++; });
   const dono=can('DONO','FINANCEIRO');
-  $('#view').innerHTML=`<div class="card mb small">💰 <b>Repasse</b> = preço do aparelho (com acessórios) <b>menos a entrada</b> que a loja já recebeu do cliente. Ex.: aparelho de R$ 1.200 com entrada de R$ 300 → a NEXUM repassa <b>R$ 900</b> para a loja. O repasse aparece quando a venda fica ativa.${dono?'':' Os pagamentos são lançados pela NEXUM; você confirma o recebimento aqui.'}</div>
+  $('#view').innerHTML=`<div class="card mb small"><b>Repasse</b> = preço do aparelho (com acessórios) <b>menos a entrada</b> que a loja já recebeu do cliente. Ex.: aparelho de R$ 1.200 com entrada de R$ 300 → a NEXUM repassa <b>R$ 900</b> para a loja. O repasse aparece quando a venda fica ativa.${dono?'':' Os pagamentos são lançados pela NEXUM; você confirma o recebimento aqui.'}</div>
   <div class="kpis"><div class="kpi"><small>A repassar</small><b style="color:var(--bad)">${brl(pend.reduce((s,v)=>s+repValor(v),0))}</b><span>${pend.length} venda(s)</span></div>
     <div class="kpi"><small>Já repassado</small><b style="color:var(--ok)">${brl(pago.reduce((s,v)=>s+repValor(v),0))}</b><span>${pago.length} venda(s)</span></div>
     ${dev.length?`<div class="kpi"><small>Loja deve devolver</small><b style="color:var(--bad)">${brl(dev.reduce((s,v)=>s+(+v.repasse.valor||repValor(v)),0))}</b><span>${dev.length} venda(s) canceladas após o repasse</span></div>`:''}</div>
