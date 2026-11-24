@@ -10591,15 +10591,16 @@ Object.assign(ACT,{ anF:d=>{ S.filtro.anF=d.f; S.filtro.anLim=40; render(); }, a
 { const DESDE=Date.parse('2026-11-24T21:00:00Z'); let feito=false;
   const checar=async()=>{ if(feito||!S?.me?.uid||DEMO||!['SUPORTE','FINANCEIRO'].includes(S.me.role)) return; feito=true;
     try{ const [u,t]=await Promise.all([DB.get('users',S.me.uid).catch(()=>null),DB.get('crmTreino',S.me.uid).catch(()=>null)]);
-      if(t?.aprovado||!(u?.treinoObrigatorio||+(u?.criadoEm||0)>=DESDE)) return;
+      const cursosOk=['crm-1','crm-2','crm-3','crm-4','crm-5'].every(k=>u?.treinamento?.cursos?.[k]);
+      if((t?.aprovado&&cursosOk)||!(u?.treinoObrigatorio||+(u?.criadoEm||0)>=DESDE)) return;
       const ov=document.createElement('div'); ov.id='treinoBloq'; ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(10,23,51,.92);display:grid;place-items:center;padding:20px';
       ov.innerHTML=`<div style="background:#fff;border-radius:20px;max-width:520px;padding:28px;font:15px/1.55 system-ui,sans-serif;color:#0F172A;box-shadow:0 20px 60px rgba(0,0,0,.4)">
         <h2 style="margin:0 0 8px;font-size:22px">Treinamento prático primeiro</h2>
-        <p style="margin:0 0 10px">Antes de operar, você precisa concluir o <b>treinamento prático</b> no CRM: conversas simuladas com clientes (bravo, confuso, em espanhol, golpe, renegociação e outras), com nota da IA.</p>
+        <p style="margin:0 0 10px">Antes de operar, conclua no CRM, em Treinamento: o <b>curso do CRM</b> (5 módulos em vídeo com narração e teste) e o <b>treinamento prático</b> (conversas simuladas com clientes, com nota da IA).</p>
         <p style="margin:0 0 18px;color:#475569">Passe em 6 conversas com nota 7 ou mais, incluindo as obrigatórias da sua função. Depois disso este portal libera sozinho.</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap"><a href="https://nexumrh.github.io/dono/crm/" style="background:#1D5BFF;color:#fff;text-decoration:none;padding:12px 18px;border-radius:12px;font-weight:700">Abrir o treinamento no CRM</a>
         <button id="treinoRe" style="background:#F1F5F9;border:0;padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer">Já concluí</button></div></div>`;
-      document.body.appendChild(ov); ov.querySelector('#treinoRe').onclick=async()=>{ const t2=await DB.get('crmTreino',S.me.uid).catch(()=>null); if(t2?.aprovado){ ov.remove(); toast('Treinamento concluído. Bom trabalho!','ok'); } else toast('O treinamento ainda não foi concluído','err'); };
+      document.body.appendChild(ov); ov.querySelector('#treinoRe').onclick=async()=>{ const t2=await DB.get('crmTreino',S.me.uid).catch(()=>null), u2=await DB.get('users',S.me.uid).catch(()=>null); if(t2?.aprovado&&['crm-1','crm-2','crm-3','crm-4','crm-5'].every(k=>u2?.treinamento?.cursos?.[k])){ ov.remove(); toast('Treinamento concluído. Bom trabalho!','ok'); } else toast('O treinamento ainda não foi concluído','err'); };
     }catch(e){ feito=false; } };
   setInterval(checar,3000); }
 
